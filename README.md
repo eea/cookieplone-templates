@@ -17,10 +17,10 @@ All upstream templates from `plone/cookieplone-templates` are also available (Pr
 uvx cookieplone --version
 
 # Generate an EEA Volto add-on
-cookieplone gh:eea/cookieplone-templates frontend_addon
+COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates cookieplone frontend_addon
 
 # Or with no prompts (uses all EEA defaults):
-cookieplone gh:eea/cookieplone-templates frontend_addon --no-input
+COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates cookieplone frontend_addon --no-input
 ```
 
 ## What's different from the Plone upstream?
