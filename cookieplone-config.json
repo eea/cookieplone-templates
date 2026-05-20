@@ -1,0 +1,58 @@
+{
+  "version": "1.0",
+  "title": "EEA Templates",
+  "description": "EEA template repository extending Plone's cookieplone-templates with EEA-specific conventions (Jenkins CI, EEA organization defaults)",
+  "extends": {
+    "url": "gh:plone/cookieplone-templates",
+    "tag": "20260320.1"
+  },
+  "groups": {
+    "add_ons": {
+      "title": "Add-ons",
+      "description": "Create add-ons for Plone",
+      "templates": ["frontend_addon", "backend_addon", "monorepo_addon", "seven_addon"]
+    },
+    "projects": {
+      "title": "Projects",
+      "description": "Create a new project",
+      "templates": ["project", "classic_project"]
+    },
+    "documentation": {
+      "title": "Documentation",
+      "description": "Documentation scaffolds",
+      "templates": ["documentation_starter"]
+    },
+    "ci": {
+      "title": "CI",
+      "description": "CI configurations",
+      "templates": ["ci_gh_backend_addon", "ci_gh_frontend_addon", "ci_gh_monorepo_addon", "ci_gh_project", "ci_gh_classic_project"]
+    },
+    "ide": {
+      "title": "IDE",
+      "description": "IDE configurations",
+      "templates": ["ide_vscode"]
+    },
+    "devops": {
+      "title": "DevOps",
+      "description": "DevOps configurations",
+      "templates": ["devops_ansible"]
+    },
+    "agents": {
+      "title": "Agents / LLM",
+      "description": "Agent and LLM configurations",
+      "templates": ["agents_instructions"]
+    },
+    "sub_templates": {
+      "title": "Sub-templates",
+      "description": "Sub-templates applied on top of other templates",
+      "templates": ["sub/cache", "sub/frontend_project", "sub/project_settings", "sub/addon_settings", "sub/classic_project_settings"]
+    }
+  },
+  "templates": {
+    "frontend_addon": {
+      "path": "./templates/frontend_addon",
+      "title": "EEA Frontend Add-on for Plone",
+      "description": "Create a Volto add-on with EEA conventions (Jenkins CI, EEA organization defaults)"
+    }
+  }
+}
