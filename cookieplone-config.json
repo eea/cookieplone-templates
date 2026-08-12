@@ -15,7 +15,7 @@
     "projects": {
       "title": "Projects",
       "description": "Create a new project",
-      "templates": ["project", "classic_project"]
+      "templates": ["frontend_project", "project", "classic_project"]
     },
     "documentation": {
       "title": "Documentation",
@@ -53,6 +53,11 @@
       "path": "./templates/frontend_addon",
       "title": "EEA Frontend Add-on for Plone",
       "description": "Create a Volto add-on with EEA conventions (Jenkins CI, EEA organization defaults)"
+    },
+    "frontend_project": {
+      "path": "./templates/frontend_project",
+      "title": "EEA Frontend Project for Plone",
+      "description": "Create a Volto frontend project with EEA conventions"
     }
   }
 }

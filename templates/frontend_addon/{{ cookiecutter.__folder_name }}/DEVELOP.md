@@ -32,10 +32,10 @@ Demo GIF
 
 Go to http://localhost:3000
 
-`make start` now defaults to Volto 18. To run the same setup against Volto 17, use:
+`make start` now defaults to Volto 19. To run the same setup against Volto 18, use:
 
-      VOLTO_VERSION=17 make
-      VOLTO_VERSION=17 make start
+      VOLTO_VERSION=18-yarn make
+      VOLTO_VERSION=18-yarn make start
 
 ### Add {{ cookiecutter.__npm_package_name }} to your Volto project
 
@@ -84,7 +84,7 @@ For new Volto 18+ projects, use Cookieplone. It includes `mrs-developer` by defa
 
         cd packages/{{ cookiecutter.__project_slug }}
 
-For legacy Volto 17 projects, keep using the yarn-based workflow from the Volto 17 documentation.
+For legacy Volto 18 projects, keep using the yarn-based workflow from the Volto 18 documentation.
 
 ## Cypress
 
@@ -107,7 +107,7 @@ Start:
 
 This will build and start with Docker a clean `Plone backend` and `Volto Frontend` with `{{ cookiecutter.__npm_package_name }}` block installed.
 
-Use `make VOLTO_VERSION=17 start` if you need to reproduce the Volto 17 setup locally.
+Use `make VOLTO_VERSION=18-yarn start` if you need to reproduce the Volto 18 setup locally.
 
 Open Cypress Interface:
 

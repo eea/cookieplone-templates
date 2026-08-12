@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "path": "build/public/static/js/*.js",
+      "maxSize": "50kB"
+    }
+  ],
+  "ci": {
+    "trackBranches": ["develop", "master"],
+    "uploadBranches": ["develop", "master"]
+  }
+}
