@@ -20,32 +20,38 @@
     "documentation": {
       "title": "Documentation",
       "description": "Documentation scaffolds",
-      "templates": ["documentation_starter"]
+      "templates": ["documentation_starter"],
+      "hidden": true
     },
     "ci": {
       "title": "CI",
       "description": "CI configurations",
-      "templates": ["ci_gh_backend_addon", "ci_gh_frontend_addon", "ci_gh_monorepo_addon", "ci_gh_project", "ci_gh_classic_project"]
+      "templates": ["ci_gh_backend_addon", "ci_gh_frontend_addon", "ci_gh_monorepo_addon", "ci_gh_project", "ci_gh_classic_project"],
+      "hidden": true
     },
     "ide": {
       "title": "IDE",
       "description": "IDE configurations",
-      "templates": ["ide_vscode"]
+      "templates": ["ide_vscode"],
+      "hidden": true
     },
     "devops": {
       "title": "DevOps",
       "description": "DevOps configurations",
-      "templates": ["devops_ansible"]
+      "templates": ["devops_ansible"],
+      "hidden": true
     },
     "agents": {
       "title": "Agents / LLM",
       "description": "Agent and LLM configurations",
-      "templates": ["agents_instructions"]
+      "templates": ["agents_instructions"],
+      "hidden": true
     },
     "sub_templates": {
       "title": "Sub-templates",
       "description": "Sub-templates applied on top of other templates",
-      "templates": ["sub/cache", "sub/frontend_project", "sub/project_settings", "sub/addon_settings", "sub/classic_project_settings"]
+      "templates": ["sub/cache", "sub/frontend_project", "sub/project_settings", "sub/addon_settings", "sub/classic_project_settings"],
+      "hidden": true
     }
   },
   "templates": {
@@ -58,6 +64,11 @@
       "path": "./templates/frontend_project",
       "title": "EEA Frontend Project for Plone",
       "description": "Create a Volto frontend project with EEA conventions"
-    }
+    },
+    "backend_addon": { "hidden": true },
+    "monorepo_addon": { "hidden": true },
+    "seven_addon": { "hidden": true },
+    "project": { "hidden": true },
+    "classic_project": { "hidden": true }
   }
 }
