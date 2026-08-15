@@ -1,16 +1,14 @@
 # Stage 1: Build
-FROM plone/frontend-builder:{{ cookiecutter.__version_volto }} AS builder
+FROM plone/frontend-builder:{{ cookiecutter.__version_plone_volto }} AS builder
 
 COPY --chown=node packages/ /app/packages/
 COPY --chown=node volto.config.js /app/
 COPY --chown=node pnpm-workspace.yaml /app/
 COPY --chown=node package.json /app/
-COPY --chown=node mrs.developer.json /app/mrs.developer.json
 COPY --chown=node pnpm-lock.yaml /app/pnpm-lock.yaml
-COPY --chown=node razzle.config.js /app/
 COPY --chown=node .bundlewatch.config.json /app/
 
-RUN make develop && pnpm install && pnpm build
+RUN pnpm install && pnpm build:deps && pnpm build
 RUN CI=1 pnpm install --prod
 
 # Stage 2: Runtime (slim)

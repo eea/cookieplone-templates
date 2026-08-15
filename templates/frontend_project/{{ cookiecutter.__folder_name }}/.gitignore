@@ -1,0 +1,63 @@
+.vscode/
+logs
+*.log
+npm-debug.log*
+.DS_Store
+.claude
+
+coverage
+
+# Node
+node_modules
+coverage
+jsdoc
+webpack-assets.json
+webpack-stats.json
+npm-debug.log
+dist
+junit.xml
+eslint.xml
+pnpm-debug.log*
+build
+
+# Volto core (fetched by mrs.developer.json)
+core
+
+# Fetched addons (via mrs.developer.json) — keep only the project addon
+packages/*
+!packages/{{ cookiecutter.frontend_addon_name }}
+
+# Other
+.DS_Store
+.idea
+lighthouse-report.html
+.vscode/
+.#*
+*~
+
+# locales
+locales/*.json
+
+# Tests
+cypress/videos/
+cypress/screenshots
+cypress/downloads/
+cypress/reports/
+
+# Local environment setup
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# generic
+data
+omelette
+
+# build
+public/critical.css
+/cache
+
+# pnpm
+.pnpm-store/

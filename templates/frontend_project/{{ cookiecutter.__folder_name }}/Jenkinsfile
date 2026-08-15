@@ -16,32 +16,42 @@ pipeline {
 
     stage('Bundlewatch') {
       when {
-        allOf {
-          not { changelog '.*^Automated release [0-9\\.]+$' }
-          not { buildingTag() }
-        }
+        branch 'develop'
+        not { changelog '.*^Automated release [0-9\\.]+$' }
       }
       steps {
         node(label: 'docker') {
-          sh '''pnpm install'''
-          sh '''make develop'''
-          sh '''pnpm build'''
-          sh '''pnpm exec bundlewatch --config .bundlewatch.config.json'''
+          script {
+            checkout scm
+            env.NODEJS_HOME = "${tool 'NodeJS'}"
+            env.PATH="${env.NODEJS_HOME}/bin:${env.PATH}"
+            sh "corepack enable"
+            sh "make develop"
+            sh "make build"
+            sh "make bundlewatch"
+          }
         }
       }
     }
 
-    stage('Docker test build') {
+    stage('Pull Request') {
       when {
         allOf {
-          not { changelog '.*^Automated release [0-9\\.]+$' }
-          not { buildingTag() }
+            not { environment name: 'CHANGE_ID', value: '' }
+            environment name: 'CHANGE_TARGET', value: 'master'
+            not { changelog '.*^Automated release [0-9\\.]+$' }
         }
       }
       steps {
         node(label: 'docker') {
           script {
-            dockerImage = docker.build("${registry}", ".")
+            if ( env.CHANGE_BRANCH != "develop" &&  !( env.CHANGE_BRANCH.startsWith("hotfix")) ) {
+                error "Pipeline aborted due to PR not made from develop or hotfix branch"
+            }
+           withCredentials([string(credentialsId: 'eea-jenkins-token', variable: 'GITHUB_TOKEN')]) {
+            sh '''docker pull eeacms/gitflow'''
+            sh '''docker run -i --rm --name="$BUILD_TAG-gitflow-pr" -e GIT_CHANGE_TARGET="$CHANGE_TARGET" -e GIT_CHANGE_BRANCH="$CHANGE_BRANCH" -e GIT_CHANGE_AUTHOR="$CHANGE_AUTHOR" -e GIT_CHANGE_TITLE="$CHANGE_TITLE" -e GIT_TOKEN="$GITHUB_TOKEN" -e GIT_BRANCH="$BRANCH_NAME" -e GIT_CHANGE_ID="$CHANGE_ID" -e GIT_ORG="$GIT_ORG" -e GIT_NAME="$GIT_NAME" -e LANGUAGE=javascript eeacms/gitflow'''
+           }
           }
         }
       }
@@ -50,58 +60,91 @@ pipeline {
     stage('Release') {
       when {
         allOf {
-          anyOf {
-            buildingTag()
-            branch 'master'
-          }
+          environment name: 'CHANGE_ID', value: ''
+          branch 'master'
         }
       }
       steps {
         node(label: 'docker') {
           withCredentials([string(credentialsId: 'eea-jenkins-token', variable: 'GITHUB_TOKEN')]) {
-            sh '''docker run -i --rm --pull always --name="$BUILD_TAG-gitflow-master" -e GIT_BRANCH="$BRANCH_NAME" -e GIT_NAME="$GIT_NAME" -e GIT_TOKEN="$GITHUB_TOKEN" -e LANGUAGE=frontend eeacms/gitflow'''
+            sh '''docker pull eeacms/gitflow'''
+            sh '''docker run -i --rm --name="$BUILD_TAG-gitflow-master" -e GIT_BRANCH="$BRANCH_NAME" -e GIT_NAME="$GIT_NAME" -e GIT_TOKEN="$GITHUB_TOKEN" -e LANGUAGE=javascript eeacms/gitflow'''
           }
         }
       }
     }
 
-    stage('Pull Request') {
+    stage('Build & Push ( on tag )') {
       when {
-        not {
-          changelog ''
-        }
-        environment name: 'CHANGE_TARGET', value: 'master'
+        buildingTag()
       }
-      steps {
-        node(label: 'docker') {
-          withCredentials([string(credentialsId: 'eea-jenkins-token', variable: 'GITHUB_TOKEN')]) {
-            sh '''docker run --pull always -i --rm --name="$BUILD_TAG-gitflow-pr" -e GIT_CHANGE_TARGET="$CHANGE_TARGET" -e GIT_CHANGE_BRANCH="$CHANGE_BRANCH" -e GIT_CHANGE_AUTHOR="$CHANGE_AUTHOR" -e GIT_CHANGE_TITLE="$CHANGE_TITLE" -e GIT_TOKEN="$GITHUB_TOKEN" -e GIT_BRANCH="$BRANCH_NAME" -e GIT_CHANGE_ID="$CHANGE_ID" -e GIT_ORG="$GIT_ORG" -e GIT_NAME="$GIT_NAME" -e LANGUAGE=frontend eeacms/gitflow'''
-          }
-        }
-      }
-    }
-
-    stage('SonarQube') {
-      when {
-        allOf {
-          not { changelog '.*^Automated release [0-9\\.]+$' }
-          not { buildingTag() }
-        }
-      }
-      steps {
+      steps{
         node(label: 'docker') {
           script {
-            def scannerHome = tool 'SonarQubeScanner'
-            def nodeJS = tool 'NodeJS'
-            if (env.CHANGE_ID) {
-              env.sonarParams = " -Dsonar.pullrequest.base=${env.CHANGE_TARGET} -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} -Dsonar.pullrequest.key=${env.CHANGE_ID} "
+            checkout scm
+            if (env.BRANCH_NAME == 'master') {
+              tagName = 'latest'
+            } else {
+              tagName = "$BRANCH_NAME"
             }
-            else {
-              env.sonarParams = " -Dsonar.branch.name=${env.BRANCH_NAME}"
+            try {
+              dockerImage = docker.build("$registry:$tagName", "--no-cache .")
+              docker.withRegistry( '', 'eeajenkins' ) {
+                dockerImage.push()
+              }
+            } finally {
+              sh "docker rmi $registry:$tagName"
             }
-            withSonarQubeEnv('Sonarqube') {
-              sh "export PATH=${scannerHome}/bin:${nodeJS}/bin:$PATH; sonar-scanner -Dsonar.sources=./src -Dsonar.projectKey=$GIT_NAME -Dsonar.projectName=$GIT_NAME -Dsonar.projectVersion=\\$(jq -r '.version' package.json) ${env.sonarParams}"
-              sh '''try=5; while [ \$try -gt 0 ]; do curl -s -XPOST -u "${SONAR_AUTH_TOKEN}:" "${SONAR_HOST_URL}api/project_tags/set?project=${GIT_NAME}&tags=${SONARQUBE_TAG}" > set_tags_result; if [ \$(grep -ic error set_tags_result ) -eq 0 ]; then try=0; else cat set_tags_result; echo "... Will retry"; sleep 15; try=\$(( \$try - 1 )); fi; done'''
+          }
+        }
+      }
+    }
+
+    stage('Release catalog ( on tag )') {
+      when {
+        buildingTag()
+      }
+      steps{
+        node(label: 'docker') {
+          withCredentials([string(credentialsId: 'eea-jenkins-token', variable: 'GITHUB_TOKEN'),  usernamePassword(credentialsId: 'jekinsdockerhub', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) { //betterleaks:allow
+            sh '''docker pull eeacms/gitflow; docker run -i --rm --name="$BUILD_TAG-release"  -e GIT_BRANCH="$BRANCH_NAME" -e GIT_NAME="$GIT_NAME" -e DOCKERHUB_REPO="$registry" -e GIT_TOKEN="$GITHUB_TOKEN" -e DOCKERHUB_USER="$DOCKERHUB_USER" -e DOCKERHUB_PASS="$DOCKERHUB_PASS"  -e DEPENDENT_DOCKERFILE_URL="$DEPENDENT_DOCKERFILE_URL" -e RANCHER_CATALOG_PATHS="$template" -e GITFLOW_BEHAVIOR="RUN_ON_TAG" eeacms/gitflow'''
+         }
+        }
+      }
+    }
+
+    stage('Upgrade demo ( on tag )') {
+      when {
+        buildingTag()
+        not { expression { BUILD_TAG.toLowerCase().contains('beta') } }
+        not { expression { BUILD_TAG.toLowerCase().contains('alpha') } }
+        not { environment name: 'RANCHER_STACKID', value: '' }
+        not { environment name: 'RANCHER_ENVID', value: '' }
+      }
+      steps {
+        node(label: 'docker') {
+          withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'Rancher_dev_token', usernameVariable: 'RANCHER_ACCESS', passwordVariable: 'RANCHER_SECRET'],string(credentialsId: 'Rancher_dev_url', variable: 'RANCHER_URL')]) { //betterleaks:allow
+            sh '''wget -O rancher_upgrade.sh https://raw.githubusercontent.com/eea/eea.docker.gitflow/master/src/rancher_upgrade.sh'''
+            sh '''chmod 755 rancher_upgrade.sh'''
+            sh '''./rancher_upgrade.sh'''
+         }
+        }
+      }
+    }
+
+    stage('Update SonarQube Tags') {
+      when {
+        not {
+          environment name: 'SONARQUBE_TAG', value: ''
+        }
+        buildingTag()
+      }
+      steps{
+        node(label: 'docker') {
+          withSonarQubeEnv('Sonarqube') {
+            withCredentials([string(credentialsId: 'eea-jenkins-token', variable: 'GIT_TOKEN')]) {
+              sh '''docker pull eeacms/gitflow'''
+              sh '''docker run -i --rm --name="${BUILD_TAG}-sonar" -e GIT_NAME=${GIT_NAME} -e GIT_TOKEN="${GIT_TOKEN}" -e SONARQUBE_TAG=${SONARQUBE_TAG} -e SONARQUBE_TOKEN=${SONAR_AUTH_TOKEN} -e SONAR_HOST_URL=${SONAR_HOST_URL}  eeacms/gitflow /update_sonarqube_tags.sh'''
             }
           }
         }
@@ -111,21 +154,15 @@ pipeline {
   }
 
   post {
-    always {
-      cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenSuccess: true, cleanWhenUnstable: true, deleteDirs: true)
-    }
     changed {
       script {
-        def details = """<h1>${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - ${currentBuild.currentResult}</h1>
-                         <p>Check console output at <a href="${env.BUILD_URL}/display/redirect">${env.JOB_BASE_NAME} - #${env.BUILD_NUMBER}</a></p>
+        def url = "${env.BUILD_URL}/display/redirect"
+        def status = currentBuild.currentResult
+        def subject = "${status}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
+        def details = """<h1>${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - ${status}</h1>
+                         <p>Check console output at <a href="${url}">${env.JOB_BASE_NAME} - #${env.BUILD_NUMBER}</a></p>
                       """
-        emailext(
-        subject: '$DEFAULT_SUBJECT',
-        body: details,
-        attachLog: true,
-        compressLog: true,
-        recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider']]
-        )
+        emailext (subject: '$DEFAULT_SUBJECT', to: '$DEFAULT_RECIPIENTS', body: details)
       }
     }
   }

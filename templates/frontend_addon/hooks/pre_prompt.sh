@@ -127,3 +127,29 @@ cypress-open: acceptance-test  ## Open Cypress interactive runner
 cypress-run: ci-acceptance-test  ## Run Cypress tests headless
 EEA_MAKEFILE
 fi
+
+# ── 3. Append EEA lint-staged targets to the Makefile ──────────────────
+# These targets are used by lint-staged in .husky/pre-commit.
+if [ -n "$MAKEFILE" ]; then
+  cat >> "$MAKEFILE" <<'EEA_LINT_MAKEFILE'
+
+# ── EEA lint-staged targets ───────────────────────────────────────────────
+# Used by lint-staged in .husky/pre-commit for pre-commit formatting.
+
+.PHONY: lint-fix
+lint-fix:
+	pnpm lint:fix
+
+.PHONY: prettier-fix
+prettier-fix:
+	pnpm prettier:fix
+
+.PHONY: stylelint-fix
+stylelint-fix:
+	pnpm stylelint:fix
+
+.PHONY: i18n
+i18n:
+	pnpm i18n
+EEA_LINT_MAKEFILE
+fi

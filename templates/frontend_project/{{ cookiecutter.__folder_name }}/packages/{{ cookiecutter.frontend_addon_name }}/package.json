@@ -1,0 +1,39 @@
+{
+  "name": "{{ cookiecutter.npm_package_name }}",
+  "version": "{{ cookiecutter.__version_frontend_package }}",
+  "description": "{{ cookiecutter.description }}",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "keywords": [
+    "volto-addon",
+    "volto",
+    "plone",
+    "react"
+  ],
+  "author": "{{ cookiecutter.author }}",
+  "homepage": "{{ cookiecutter.__repository_url }}#readme",
+  "repository": {
+    "type": "git",
+    "url": "{{ cookiecutter.__repository_git }}"
+  },
+  "scripts": {
+    "i18n": "rm -rf build/messages && NODE_ENV=production i18n --addon"
+  },
+  "addons": [],
+  "theme": "",
+  "dependencies": {},
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@plone/registry": "workspace:*",
+    "@plone/scripts": "workspace:*",
+    "@plone/types": "workspace:*",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.7.3",
+    "@testing-library/react": "^16.2.0",
+    "vitest": "^3.1.2"
+  }
+}

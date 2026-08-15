@@ -41,12 +41,13 @@ endif
 
 # Top-level targets
 .PHONY: all
-all: develop
+all: develop husky
 
 .PHONY: develop
 develop:    	## Runs missdev in the local project (mrs.developer.json should be present)
-	npx -p mrs-developer missdev --config=jsconfig.json --output=packages --fetch-https
-	NODE_OPTIONS="--max-old-space-size=16384" pnpm install
+	pnpm dlx mrs-developer missdev --config=jsconfig.json --fetch-https
+	pnpm install
+	pnpm build:deps
 
 .PHONY: install
 install:		## Install project and add-ons
@@ -59,6 +60,10 @@ build:			## Build frontend
 .PHONY: bundlewatch
 bundlewatch:
 	pnpm exec bundlewatch --config .bundlewatch.config.json
+
+.PHONY: husky
+husky:			## Install husky git hooks in packages/*
+	bash scripts/husky.sh
 
 .PHONY: start
 start:			## Start frontend
