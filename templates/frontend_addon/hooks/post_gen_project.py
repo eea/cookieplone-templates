@@ -7,6 +7,10 @@ Patches the generated addon's package.json to add:
 
 The .husky/pre-commit hook lives at the repo root (not inside the addon
 package), so husky install must run from there.
+
+Also removes the unused test-runner config so a Volto 19 addon does not
+ship a dead `jest-addon.config.js` (and a Volto 18 addon does not ship a
+dead `vitest.config.mjs`), mirroring the upstream post-generation cleanup.
 """
 
 import json
@@ -16,6 +20,31 @@ from pathlib import Path
 context: OrderedDict = {{cookiecutter}}
 
 
+def remove_conditional_files(context, output_dir):
+    """Drop the test-runner config that does not match the chosen framework.
+
+    Volto 19 (Vitest) should not keep `jest-addon.config.js`; Volto 18 (Jest)
+    should not keep `packages/<addon>/vitest.config.mjs`. `.pnpmfile.cjs` is only
+    needed on Volto 19+, so it is removed for older versions.
+    """
+    addon_name = context.get("frontend_addon_name", "")
+    test_framework = context.get("__test_framework", "vitest")
+
+    if test_framework == "jest":
+        vitest_path = output_dir / "packages" / addon_name / "vitest.config.mjs"
+        if vitest_path.is_file():
+            vitest_path.unlink()
+    else:  # vitest (Volto 19+)
+        jest_path = output_dir / "jest-addon.config.js"
+        if jest_path.is_file():
+            jest_path.unlink()
+
+    if context.get("volto_version", "99") < "19":
+        pnpmfile_path = output_dir / ".pnpmfile.cjs"
+        if pnpmfile_path.is_file():
+            pnpmfile_path.unlink()
+
+
 def main():
     """Patch the generated addon package.json with EEA lint-staged + husky config."""
     addon_name = context.get("frontend_addon_name", "")
@@ -23,6 +52,8 @@ def main():
         return
 
     output_dir = Path().cwd()
+    remove_conditional_files(context, output_dir)
+
     pkg_path = output_dir / "packages" / addon_name / "package.json"
 
     if not pkg_path.is_file():

@@ -27,14 +27,14 @@ Demo GIF
 
       git clone https://github.com/eea/{{ cookiecutter.__project_slug }}.git
       cd {{ cookiecutter.__project_slug }}
-      make
+      make install
       make start
 
 Go to http://localhost:3000
 
 `make start` now defaults to Volto 19. To run the same setup against Volto 18, use:
 
-      VOLTO_VERSION=18-yarn make
+      VOLTO_VERSION=18-yarn make install
       VOLTO_VERSION=18-yarn make start
 
 ### Add {{ cookiecutter.__npm_package_name }} to your Volto project
@@ -101,7 +101,7 @@ Go to:
 Start:
 
   ```Bash
-  make
+  make install
   make start
   ```
 

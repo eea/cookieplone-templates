@@ -21,7 +21,7 @@ You need to first install the [release-it](https://github.com/release-it/release
    npm install -g release-it
    ```
 
-Release-it uses the configuration written in the [`.release-it.json`](./.release-it.json) file located in the root of the repository.
+Release-it uses the configuration written in the [`.release-it.json`](./packages/{{ cookiecutter.__project_slug }}/.release-it.json) file located in the add-on package directory (`packages/{{ cookiecutter.__project_slug }}/`).
 
 Release-it is a tool that automates 4 important steps in the release process:
 
