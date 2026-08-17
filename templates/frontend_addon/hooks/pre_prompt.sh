@@ -1,6 +1,9 @@
 #!/bin/bash
 # EEA pre_prompt hook: convert merged cookiecutter.json to cookieplone.json
-# with EEA-specific fields hidden from prompts, and append EEA Makefile targets.
+# with EEA-specific fields hidden from prompts.
+#
+# The EEA Makefile, docker-compose.yml, Jenkinsfile and other EEA-specific
+# files are provided as template files in the overlay (no runtime patching needed).
 #
 # Visible prompts (user can change these):
 #   - title                 (Add-on Title)
@@ -102,54 +105,3 @@ with open('cookieplone.json', 'w') as f:
 
 os.unlink('cookiecutter.json')
 " 2>/dev/null || true
-
-# ── 2. Append EEA convenience targets to the Makefile ────────────────────
-
-# The Makefile lives inside the {{ cookiecutter.__folder_name }} directory in the template.
-# Find it and append EEA cypress aliases.
-MAKEFILE=$(find . -name Makefile -not -path '*/core/*' -not -path '*/node_modules/*' -not -path './Makefile' | head -1)
-if [ -n "$MAKEFILE" ]; then
-  cat >> "$MAKEFILE" <<'EEA_MAKEFILE'
-
-# ── EEA convenience targets ───────────────────────────────────────────────
-# Aliases for the upstream Cypress targets.  Start backend and frontend
-# manually in separate terminals, then run:
-#   make cypress-open   (interactive)
-#   make cypress-run    (headless)
-
-.PHONY: cypress
-cypress: ci-acceptance-test  ## Run Cypress tests headless
-
-.PHONY: cypress-open
-cypress-open: acceptance-test  ## Open Cypress interactive runner
-
-.PHONY: cypress-run
-cypress-run: ci-acceptance-test  ## Run Cypress tests headless
-EEA_MAKEFILE
-fi
-
-# ── 3. Append EEA lint-staged targets to the Makefile ──────────────────
-# These targets are used by lint-staged in .husky/pre-commit.
-if [ -n "$MAKEFILE" ]; then
-  cat >> "$MAKEFILE" <<'EEA_LINT_MAKEFILE'
-
-# ── EEA lint-staged targets ───────────────────────────────────────────────
-# Used by lint-staged in .husky/pre-commit for pre-commit formatting.
-
-.PHONY: lint-fix
-lint-fix:
-	pnpm lint:fix
-
-.PHONY: prettier-fix
-prettier-fix:
-	pnpm prettier:fix
-
-.PHONY: stylelint-fix
-stylelint-fix:
-	pnpm stylelint:fix
-
-.PHONY: i18n
-i18n:
-	pnpm i18n
-EEA_LINT_MAKEFILE
-fi

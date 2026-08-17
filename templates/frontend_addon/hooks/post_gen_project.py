@@ -3,7 +3,10 @@
 Patches the generated addon's package.json to add:
 - lint-staged configuration (used by .husky/pre-commit)
 - husky and lint-staged devDependencies
-- "prepare": "husky install" script
+- "prepare": "cd ../.. && husky install || true" script
+
+The .husky/pre-commit hook lives at the repo root (not inside the addon
+package), so husky install must run from there.
 """
 
 import json
@@ -50,14 +53,18 @@ def main():
         ],
     }
 
-    # Add "prepare" script for husky
+    # Add "prepare" script for husky.
+    # The addon package is at packages/<addon>/, but .git is at the repo root
+    # (2 levels up).  In a monorepo, .git may be further up — fail silently then.
     scripts = data.setdefault("scripts", {})
-    scripts["prepare"] = "husky install"
+    scripts["prepare"] = "cd ../.. && husky install || true"
 
-    # Add husky and lint-staged to devDependencies
+    # Add EEA devDependencies
     dev_deps = data.setdefault("devDependencies", {})
     dev_deps["husky"] = "^8.0.3"
     dev_deps["lint-staged"] = "^14.0.1"
+    dev_deps["@cypress/code-coverage"] = "^3.10.0"
+    dev_deps["@vitest/coverage-v8"] = data.get("devDependencies", {}).get("vitest", "^3.1.2")
 
     pkg_path.write_text(json.dumps(data, indent=2) + "\n")
 
