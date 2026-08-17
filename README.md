@@ -47,14 +47,21 @@ All other options (author, email, GitHub org, npm scope, Volto version, prerelea
 
 | File | Source | Purpose |
 |------|--------|---------|
-| `Jenkinsfile` | EEA | Dual Volto 19 (current) + Volto 18-yarn (previous) CI pipeline using upstream Makefile targets |
+| `Jenkinsfile` | EEA | Dual Volto 19 (current) + Volto 18-yarn (previous) CI pipeline using EEA Makefile targets |
 | `Dockerfile` | EEA | CI test image with Chromium — handles both Volto 18 (`/setupAddon`) and Volto 19 (copy to `packages/` + `pnpm install`) |
+| `Makefile` | EEA | Slim EEA Makefile — local pnpm dev, backend docker-compose, EEA target names (`ci-fix`, `test-ci`, `start-ci`, `check-ci`, `cypress-ci`), ports 3000/8080 |
+| `docker-compose.yml` | EEA | Backend-only (`eeacms/plone-backend` on port 8080 with `eea.kitkat:testing` profiles) |
+| `cypress/support/commands.js` | EEA | EEA Cypress commands: `autologin`, `createContent`, `removeContent`, `setWorkflow`, Slate editor helpers |
+| `cypress/support/e2e.js` | EEA | EEA Cypress support: `@cypress/code-coverage`, `slateBeforeEach`/`slateAfterEach` |
+| `cypress/tests/example.cy.js` | EEA | EEA-style example test (block basics with Slate) |
+| `.husky/pre-commit` | EEA | `pnpm lint-staged` (skips in CI) — at repo root |
 | `DEVELOP.md` | EEA | EEA development instructions |
 | `LICENSE.md` | EEA | EEA MIT license |
 | `RELEASE.md` | EEA | EEA release instructions (pnpm-based) |
 | `.gitleaks.toml` | EEA | Security scanning config |
 | `hooks/pre_prompt.sh` | EEA | Strips upstream prompts, converts to cookieplone.json v2 |
-| `Makefile` | Upstream | Not overridden — upstream pnpm-based Makefile works for local dev |
+| `hooks/post_gen_project.py` | EEA | Patches addon `package.json`: lint-staged config, husky, `@cypress/code-coverage`, `@vitest/coverage-v8`, `prepare` script |
+| `src/config/settings.test.ts` | EEA | Example Vitest test |
 | `package.json`, `.eslintrc.js`, etc. | Upstream | Inherited via `extends` overlay |
 
 ### `frontend_project` overrides
@@ -94,14 +101,28 @@ eea/cookieplone-templates/
     ├── frontend_addon/
     │   ├── cookiecutter.json         ← EEA defaults, no docs subtemplate
     │   ├── hooks/
-    │   │   └── pre_prompt.sh        ← strips upstream prompts, converts to cookieplone.json v2
+    │   │   ├── pre_prompt.sh         ← strips upstream prompts, converts to cookieplone.json v2
+    │   │   └── post_gen_project.py   ← patches addon package.json (lint-staged, husky, coverage deps)
     │   └── {{ cookiecutter.__folder_name }}/
-    │       ├── Jenkinsfile           ← EEA dual Volto 19/18 CI
+    │       ├── .husky/
+    │       │   └── pre-commit        ← pnpm lint-staged (skips in CI)
+    │       ├── Jenkinsfile           ← EEA dual Volto 19/18 CI with EEA Makefile targets
     │       ├── Dockerfile            ← EEA CI image with Chromium
+    │       ├── Makefile              ← EEA slim Makefile (pnpm, ports 3000/8080, EEA target names)
+    │       ├── docker-compose.yml    ← backend-only (eeacms/plone-backend on 8080)
     │       ├── DEVELOP.md            ← EEA dev docs
     │       ├── LICENSE.md            ← EEA MIT license
     │       ├── RELEASE.md            ← EEA release instructions
-    │       └── .gitleaks.toml        ← EEA security config
+    │       ├── .gitleaks.toml        ← EEA security config
+    │       ├── cypress/
+    │       │   ├── support/
+    │       │   │   ├── commands.js   ← EEA commands (autologin, createContent, Slate helpers)
+    │       │   │   └── e2e.js        ← EEA support (code-coverage, slateBeforeEach/AfterEach)
+    │       │   └── tests/
+    │       │       └── example.cy.js ← EEA example test (block basics)
+    │       └── packages/{{ cookiecutter.frontend_addon_name }}/
+    │           └── src/config/
+    │               └── settings.test.ts ← Example Vitest test
     └── frontend_project/
         ├── cookiecutter.json         ← EEA project defaults
         └── {{ cookiecutter.__folder_name }}/
@@ -112,4 +133,4 @@ eea/cookieplone-templates/
             └── .bundlewatch.config.json
 ```
 
-Only files that differ from the Plone upstream are stored here. Everything else (Makefile for addons, package.json, cypress config, storybook, pnpm workspace, TypeScript config, Vitest config, etc.) is inherited automatically via the `extends` overlay mechanism.
+Only files that differ from the Plone upstream are stored here. Everything else (workspace `package.json`, `.eslintrc.js`, `cypress.config.js`, `vitest.config.mjs`, storybook, pnpm workspace, TypeScript config, etc.) is inherited automatically via the `extends` overlay mechanism.
