@@ -78,7 +78,7 @@ pipeline {
         stages {
           stage('Build test image') {
             steps {
-              sh '''docker build --pull --build-arg="VOLTO_VERSION=$CURRENT_VOLTO" --build-arg="ADDON_NAME=$NAMESPACE/$GIT_NAME" --build-arg="ADDON_PATH=$GIT_NAME" . -t $IMAGE_NAME-frontend-current'''
+              sh '''docker build --pull --build-arg="VOLTO_VERSION=$CURRENT_VOLTO" --build-arg="ADDON_PATH=$GIT_NAME" . -t $IMAGE_NAME-frontend-current'''
             }
           }
 
@@ -273,7 +273,7 @@ pipeline {
         stages {
           stage('Build test image') {
             steps {
-              sh '''docker build --pull --build-arg="VOLTO_VERSION=$PREVIOUS_VOLTO" --build-arg="ADDON_NAME=$NAMESPACE/$GIT_NAME"  --build-arg="ADDON_PATH=$GIT_NAME" . -t $IMAGE_NAME-frontend-previous'''
+              sh '''docker build --pull --build-arg="VOLTO_VERSION=$PREVIOUS_VOLTO" --build-arg="ADDON_PATH=$GIT_NAME" . -t $IMAGE_NAME-frontend-previous'''
             }
           }
 
