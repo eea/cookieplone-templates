@@ -40,15 +40,28 @@ COPY --chown=node:node ./ /app/src/addons/${ADDON_PATH}/
 
 # Install addon: Volto 18 has /setupAddon, Volto 19 does not
 RUN if [ -f /setupAddon ]; then \
-      # --- Volto 18 (yarn-based) ---
+      # --- Legacy Volto 18 yarn-based builder ---
       /setupAddon && yarn install; \
     else \
-      # --- Volto 19 (pnpm workspace) ---
+      # --- Volto 18 (pnpm) / Volto 19 (pnpm) workspace builder ---
+      # Overlay the add-on's workspace + config onto the base Volto project so
+      # the EEA Makefile targets (lint/test/start/cypress) run the add-on's own
+      # scripts (root package.json "test"/"lint"/...) instead of the base image's
+      # (which would otherwise run Volto's own test suite and fail).
       cp -r /app/src/addons/${ADDON_PATH}/packages/${ADDON_PATH} /app/packages/${ADDON_PATH} && \
       cp /app/src/addons/${ADDON_PATH}/volto.config.js  /app/volto.config.js && \
       cp /app/src/addons/${ADDON_PATH}/cypress.config.js /app/cypress.config.js && \
       cp -r /app/src/addons/${ADDON_PATH}/cypress /app/cypress && \
       cp /app/src/addons/${ADDON_PATH}/Makefile /app/Makefile && \
+      cp /app/src/addons/${ADDON_PATH}/package.json /app/package.json && \
+      cp /app/src/addons/${ADDON_PATH}/pnpm-workspace.yaml /app/pnpm-workspace.yaml && \
+      cp /app/src/addons/${ADDON_PATH}/.npmrc /app/.npmrc && \
+      cp /app/src/addons/${ADDON_PATH}/.pnpmfile.cjs /app/.pnpmfile.cjs && \
+      cp /app/src/addons/${ADDON_PATH}/.eslintrc.js /app/.eslintrc.js && \
+      cp /app/src/addons/${ADDON_PATH}/.prettierrc /app/.prettierrc && \
+      cp /app/src/addons/${ADDON_PATH}/.prettierignore /app/.prettierignore && \
+      cp /app/src/addons/${ADDON_PATH}/.stylelintrc /app/.stylelintrc && \
+      cp -r /app/src/addons/${ADDON_PATH}/.storybook /app/.storybook && \
       pnpm install && make build-deps; \
     fi
 

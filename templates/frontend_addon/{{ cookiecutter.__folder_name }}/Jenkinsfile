@@ -11,7 +11,7 @@ pipeline {
     BACKEND_PROFILES = "eea.kitkat:testing"
     BACKEND_ADDONS = ""
     CURRENT_VOLTO = "19"
-    PREVIOUS_VOLTO = "18-yarn"
+    PREVIOUS_VOLTO = "18"
     IMAGE_NAME = BUILD_TAG.toLowerCase()
   }
 
@@ -261,8 +261,8 @@ pipeline {
         }
       }
 
-      // Volto 18-yarn (previous) — Cypress only, uses yarn directly
-      stage('Volto 18-yarn') {
+      // Volto 18 (previous) — pnpm, same EEA Makefile flow as Volto 19
+      stage('Volto 18') {
         agent { node { label 'integration'} }
         when {
           allOf {
@@ -277,29 +277,40 @@ pipeline {
             }
           }
 
-           stage('Integration tests') {
+          stage('Integration tests') {
               steps {
                 script {
                   try {
                     sh '''docker run --pull always --rm -d --name="$IMAGE_NAME-plone-previous" -e SITE="Plone" -e PROFILES="$BACKEND_PROFILES" -e ADDONS="$BACKEND_ADDONS" eeacms/plone-backend'''
-                    sh '''docker run -d --shm-size=4g --link $IMAGE_NAME-plone-previous:plone --name="$IMAGE_NAME-cypress-previous" -e "RAZZLE_INTERNAL_API_PATH=http://plone:8080/Plone" -e "CYPRESS_API_PATH=http://plone:8080/Plone" --entrypoint=yarn --workdir=/app/src/addons/$GIT_NAME $IMAGE_NAME-frontend-previous start'''
-                    frontend = sh script:'''timeout 240 docker exec $IMAGE_NAME-cypress-previous bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 2; done' ''', returnStatus: true
+                    sh '''docker run -d --shm-size=4g --link $IMAGE_NAME-plone-previous:plone --name="$IMAGE_NAME-cypress-previous" -e "RAZZLE_INTERNAL_API_PATH=http://plone:8080/Plone" --entrypoint=make --workdir=/app $IMAGE_NAME-frontend-previous start-ci'''
+                    frontend = sh script:'''docker exec --workdir=/app $IMAGE_NAME-cypress-previous make check-ci''', returnStatus: true
                     if ( frontend != 0 ) {
                       sh '''docker logs $IMAGE_NAME-cypress-previous; exit 1'''
                     }
 
-                    sh '''timeout -s 9 1800 docker exec --workdir=/app/src/addons/${GIT_NAME} $IMAGE_NAME-cypress-previous npx cypress run --browser chromium'''
+                    sh '''timeout -s 9 1800 docker exec --workdir=/app $IMAGE_NAME-cypress-previous make cypress-ci'''
                   } finally {
                     try {
                       if ( frontend == 0 ) {
                       sh '''rm -rf cypress-videos-previous cypress-results-previous cypress-coverage-previous cypress-screenshots-previous'''
                       sh '''mkdir -p cypress-videos-previous cypress-results-previous cypress-coverage-previous cypress-screenshots-previous'''
-                      videos = sh script: '''docker cp $IMAGE_NAME-cypress-previous:/app/src/addons/$GIT_NAME/cypress/videos cypress-videos-previous/''', returnStatus: true
-                      sh '''docker cp $IMAGE_NAME-cypress-previous:/app/src/addons/$GIT_NAME/cypress/reports cypress-results-previous/'''
-                      screenshots = sh script: '''docker cp $IMAGE_NAME-cypress-previous:/app/src/addons/$GIT_NAME/cypress/screenshots cypress-screenshots-previous''', returnStatus: true
+                      videos = sh script: '''docker cp $IMAGE_NAME-cypress-previous:/app/cypress/videos cypress-videos-previous/''', returnStatus: true
+                      sh '''docker cp $IMAGE_NAME-cypress-previous:/app/cypress/reports cypress-results-previous/'''
+                      screenshots = sh script: '''docker cp $IMAGE_NAME-cypress-previous:/app/cypress/screenshots cypress-screenshots-previous''', returnStatus: true
 
                       archiveArtifacts artifacts: 'cypress-screenshots-previous/**', fingerprint: true, allowEmptyArchive: true
 
+                      coverage = sh script: '''docker cp $IMAGE_NAME-cypress-previous:/app/coverage cypress-coverage-previous''', returnStatus: true
+
+                      if ( coverage == 0 ) {
+                        publishHTML(target : [allowMissing: true,
+                             alwaysLinkToLastBuild: true,
+                             keepAll: true,
+                             reportDir: 'cypress-coverage-previous/coverage/lcov-report',
+                             reportFiles: 'index.html',
+                             reportName: 'CypressCoverage (Volto 18)',
+                             reportTitles: 'Integration Tests Code Coverage'])
+                      }
                       if ( videos == 0 ) {
                         sh '''for file in $(find cypress-results-previous -name *.xml); do if [ $(grep -E 'failures="[1-9].*"' $file | wc -l) -eq 0 ]; then testname=$(grep -E 'file=.*failures="0"' $file | sed 's#.* file=".*\\/\\(.*\\.[jsxt]\\+\\)" time.*#\\1#' );  rm -f cypress-videos-previous/videos/$testname.mp4; fi; done'''
                         archiveArtifacts artifacts: 'cypress-videos-previous/**/*.mp4', fingerprint: true, allowEmptyArchive: true
@@ -320,7 +331,7 @@ pipeline {
                   }
                 }
               }
-            }
+          }
 
         }
       }
