@@ -51,7 +51,7 @@ RUN if [ -f /setupAddon ]; then \
       cp -r /app/src/addons/${ADDON_PATH}/packages/${ADDON_PATH} /app/packages/${ADDON_PATH} && \
       cp /app/src/addons/${ADDON_PATH}/volto.config.js  /app/volto.config.js && \
       cp /app/src/addons/${ADDON_PATH}/cypress.config.js /app/cypress.config.js && \
-      cp -r /app/src/addons/${ADDON_PATH}/cypress /app/cypress && \
+      rm -rf /app/cypress && cp -r /app/src/addons/${ADDON_PATH}/cypress /app/cypress && \
       cp /app/src/addons/${ADDON_PATH}/Makefile /app/Makefile && \
       cp /app/src/addons/${ADDON_PATH}/package.json /app/package.json && \
       cp /app/src/addons/${ADDON_PATH}/pnpm-workspace.yaml /app/pnpm-workspace.yaml && \
