@@ -113,6 +113,16 @@ def main():
 
     pkg_path.write_text(json.dumps(data, indent=2) + "\n")
 
+    # The .husky/pre-commit hook at the repo root runs `pnpm lint-staged`,
+    # which resolves from the root -dev shell. lint-staged lives in the
+    # nested add-on package, so declare it in the root devDependencies too,
+    # otherwise local commits fail with "Command \"lint-staged\" not found".
+    root_pkg_path = output_dir / "package.json"
+    root_data = json.loads(root_pkg_path.read_text())
+    root_dev = root_data.setdefault("devDependencies", {})
+    root_dev["lint-staged"] = "^14.0.1"
+    root_pkg_path.write_text(json.dumps(root_data, indent=2) + "\n")
+
 
 if __name__ == "__main__":
     main()
