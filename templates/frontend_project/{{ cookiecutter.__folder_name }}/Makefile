@@ -34,7 +34,7 @@ else
 	OK_COLOR=`tput setaf 2`
 	WARN_COLOR=`tput setaf 3`
 	ERROR_COLOR=`tput setaf 1`
-	NO_COLOR=`tput sgr0`
+	NO_COLOR=
 endif
 
 ##############################################################################
@@ -45,13 +45,20 @@ all: develop husky
 
 .PHONY: develop
 develop:    	## Runs missdev in the local project (mrs.developer.json should be present)
-	pnpm dlx mrs-developer missdev --config=jsconfig.json --fetch-https
-	pnpm install
+	pnpm develop
+	NODE_OPTIONS="--max-old-space-size=16384" pnpm install
+	pnpm build:deps
+
+.PHONY: ci-install
+ci-install:		## Fetch workspaces and perform an immutable CI install
+	pnpm develop
+	NODE_OPTIONS="--max-old-space-size=16384" pnpm install --frozen-lockfile
 	pnpm build:deps
 
 .PHONY: install
 install:		## Install project and add-ons
 	NODE_OPTIONS="--max-old-space-size=16384" pnpm install
+	pnpm build:deps
 
 .PHONY: build
 build:			## Build frontend
@@ -81,13 +88,74 @@ staging:		## Start frontend w/ Staging Plone Backend
 demo:		## Start frontend w/ Demo Plone Backend
 	NODE_OPTIONS="--max-old-space-size=16384" RAZZLE_API_PATH=https://demo.example.com RAZZLE_INTERNAL_API_PATH=https://demo.example.com pnpm start
 
+.PHONY: update
+update: 		## Update all workspace dependencies
+	./scripts/update.sh
+
+.PHONY: status
+status: 		## Check packages for changes
+	./scripts/status.sh
+
+.PHONY: pull
+pull: 			## Run git pull on all packages
+	./scripts/pull.sh
+
+.PHONY: test
+test: 			## Run Vitest tests for the project add-on
+	pnpm test
+
+.PHONY: check
+check:			## Run static checks and unit tests
+	pnpm check
+
+.PHONY: lint
+lint:			## Run ESLint, Prettier and Stylelint checks
+	pnpm lint
+	pnpm prettier
+	pnpm stylelint
+
+.PHONY: format
+format:			## Apply ESLint, Prettier and Stylelint fixes
+	pnpm lint:fix
+	pnpm prettier:fix
+	pnpm stylelint:fix
+
+.PHONY: typecheck
+typecheck:		## Run TypeScript checks for the project add-on
+	pnpm typecheck
+
+.PHONY: i18n
+i18n:			## Regenerate translation catalogs
+	pnpm i18n
+
+.PHONY: ci-i18n
+ci-i18n:		## Verify generated translation catalogs are committed
+	pnpm i18n
+	git diff --exit-code -- packages/{{ cookiecutter.frontend_addon_name }}/locales
+
 .PHONY: cypress
 cypress:		## Run Cypress acceptance tests (uses baseUrl from cypress.config.js)
-	pnpm exec cypress run --config-file cypress.config.js
+	pnpm cypress:run
 
 .PHONY: cypress-open
 cypress-open:		## Open Cypress interactive test runner
-	pnpm exec cypress open --config-file cypress.config.js
+	pnpm cypress:open
+
+.PHONY: cypress-staging
+cypress-staging:	## Run Cypress tests against staging
+	pnpm cypress:staging
+
+.PHONY: cypress-production
+cypress-production:	## Run Cypress tests against production
+	pnpm cypress:production
+
+.PHONY: cypress-local
+cypress-local:		## Run Cypress tests against localhost:3000
+	pnpm cypress:smoke
+
+.PHONY: acceptance-backend-start
+acceptance-backend-start:	## Start the official Plone acceptance backend on port 55001
+	docker run --rm -p 55001:55001 plone/server-acceptance:6.0
 
 .PHONY: help
 help:			## Show this help.

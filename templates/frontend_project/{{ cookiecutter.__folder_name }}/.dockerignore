@@ -4,6 +4,7 @@
 core
 packages/*
 !packages/{{ cookiecutter.frontend_addon_name }}
+!packages/{{ cookiecutter.frontend_addon_name }}/**
 packages/*/node_modules
 .storybook
 build

@@ -17,8 +17,11 @@ module.exports = defineConfig({
   },
   e2e: {
     setupNodeEvents(on, config) {
+      require('@cypress/code-coverage/task')(on, config);
+      require('cypress-fail-fast/plugin')(on, config);
       return config;
     },
-    baseUrl: 'http://localhost:3000',
+    baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost:3000',
+    specPattern: 'cypress/e2e/**/*.cy.js',
   },
 });
