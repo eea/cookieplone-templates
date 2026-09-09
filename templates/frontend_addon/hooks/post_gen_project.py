@@ -88,7 +88,21 @@ def main():
     # The addon package is at packages/<addon>/, but .git is at the repo root
     # (2 levels up).  In a monorepo, .git may be further up — fail silently then.
     scripts = data.setdefault("scripts", {})
+    scripts["test"] = "vitest --config ./vitest.config.mjs run --passWithNoTests"
+    scripts["test:fix"] = "vitest --config ./vitest.config.mjs run --passWithNoTests --update"
+    scripts["release-beta"] = "release-it --preRelease=beta"
+    scripts["release-major-beta"] = "release-it major --preRelease=beta"
     scripts["prepare"] = "cd ../.. && husky install || true"
+
+    # EEA release flow uses .release-it.json (auto-changelog), not towncrier.
+    # The upstream template generates towncrier.toml + news/ — remove them.
+    towncrier = output_dir / "packages" / addon_name / "towncrier.toml"
+    if towncrier.is_file():
+        towncrier.unlink()
+    news_dir = output_dir / "packages" / addon_name / "news"
+    if news_dir.is_dir():
+        import shutil
+        shutil.rmtree(news_dir, ignore_errors=True)
 
     # Add EEA devDependencies
     dev_deps = data.setdefault("devDependencies", {})
