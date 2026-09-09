@@ -14,7 +14,8 @@ Upstream templates (backend add-on, monorepo add-on, classic project, documentat
 ## Quick start
 
 ```bash
-# Interactive — only 2 prompts: Title and Description
+# Interactive — Title, Add-on name (derived from Title), Description,
+# NPM package name, prerelease versions, Volto version
 COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates uvx cookieplone@2.0.0b3
 
 # Generate a specific template
@@ -37,11 +38,14 @@ All other upstream categories (Documentation, CI, IDE, DevOps, Agents, Sub-templ
 
 ### Prompts
 
-The `frontend_addon` template reduces prompts to just **two**:
-1. **Add-on Title** — the name of your addon
-2. **Description** — a short description
+The `frontend_addon` template keeps prompts minimal:
+1. **Add-on Title** — e.g. `volto-block-divider`
+2. **Add-on name** — used **exactly as provided** for the folder and npm package; defaults to the slugified title, so include the `volto-` prefix yourself if you want it (only the `@eeacms/` npm scope is added automatically)
+3. **Description** — a short description
+4. **NPM package name** — defaults to `@eeacms/<add-on name>`
+5. **Prerelease versions** and **Volto version**
 
-All other options (author, email, GitHub org, npm scope, Volto version, prerelease versions, CI initialization, documentation) are pre-configured with EEA defaults via a `pre_prompt` hook that converts the merged `cookiecutter.json` to a `cookieplone.json` (v2 format) with non-essential fields marked as `format: "constant"` or `format: "computed"`.
+All other options (author, email, GitHub org, CI initialization, documentation) are pre-configured with EEA defaults via a `pre_prompt` hook that converts the merged `cookiecutter.json` to a `cookieplone.json` (v2 format) with non-essential fields marked as `format: "constant"` or `format: "computed"`.
 
 ### `frontend_addon` overrides
 
@@ -68,10 +72,18 @@ All other options (author, email, GitHub org, npm scope, Volto version, prerelea
 
 | File | Source | Purpose |
 |------|--------|---------|
-| `Jenkinsfile` | EEA | EEA CI pipeline (Bundlewatch, Docker build, gitflow, SonarQube) |
-| `Dockerfile` | EEA | Multi-stage build with `plone/frontend-builder` |
-| `Makefile` | EEA | EEA targets (develop, relstorage, staging, demo, cypress) using pnpm |
-| `entrypoint.sh` | EEA | Sentry source map upload (no REBUILD) |
+| `Jenkinsfile` | EEA | EEA CI pipeline (Volto frontend checks: `ci-install`, `check`, `ci-i18n`, `build`, `bundlewatch` + Docker build and Cypress smoke test; Docker build & push, gitflow, SonarQube) |
+| `Dockerfile` | EEA | Multi-stage with `plone/frontend-builder` + `missdev` fetch, `--frozen-lockfile`, prod prune, `@sentry/cli` rebuild, SSR dependency check; runtime from `plone/frontend-prod-config` |
+| `Makefile` | EEA | EEA targets (develop, ci-install, check, ci-i18n, relstorage, staging, demo, cypress, update, status, pull) using pnpm |
+| `entrypoint.sh` | EEA | Sentry source map upload (no REBUILD — debug pods build manually) |
+| `razzle.extend.js` | EEA | Webpack extender (gzip + brotli compression, node-target performance hints), loaded via the Volto 19 AddonRegistry |
+| `packages/<addon>/scripts/check-server-dependencies.cjs` | EEA | CI gate: verifies the SSR bundle's production dependencies are installed after the prod prune |
+| `cypress.config.js` | EEA | JUnit reporter + `@cypress/code-coverage` + `cypress-fail-fast` |
+| `cypress/e2e/smoke.cy.js` | EEA | Smoke test: homepage serves and hydrates without compile errors |
+| `.eslintrc.js` | EEA | AddonRegistry-based aliases (no `jsconfig.json`) |
+| `.nvmrc`, `.release-it.json` | EEA | Node version pin, gitflow release config |
+| `scripts/` | EEA | Generic workspace scripts (`husky.sh`, `update.sh`, `status.sh`, `pull.sh`) |
+| `package.json` | EEA | EEA scripts (check, cypress, develop), `@sentry/cli`, workspace pnpm overrides, React pins |
 | `.bundlewatch.config.json` | EEA | Bundle size monitoring pattern |
 | `cookiecutter.json` | EEA | EEA defaults (`@eeacms/` scope, `eea` org, Volto 19.3.0) |
 
@@ -126,11 +138,19 @@ eea/cookieplone-templates/
     └── frontend_project/
         ├── cookiecutter.json         ← EEA project defaults
         └── {{ cookiecutter.__folder_name }}/
-            ├── Jenkinsfile           ← EEA CI (Bundlewatch, Docker, gitflow)
-            ├── Dockerfile            ← multi-stage with plone/frontend-builder
+            ├── Jenkinsfile           ← EEA CI (Volto frontend checks + Docker smoke, gitflow)
+            ├── Dockerfile            ← multi-stage with missdev + SSR dependency check
             ├── Makefile              ← EEA targets (pnpm)
             ├── entrypoint.sh         ← Sentry upload, no REBUILD
+            ├── razzle.extend.js      ← gzip/brotli webpack extender (in project add-on)
+            ├── cypress/
+            │   └── e2e/
+            │       └── smoke.cy.js   ← homepage smoke test
+            ├── scripts/              ← husky.sh, update.sh, status.sh, pull.sh
+            ├── package.json          ← EEA scripts + pnpm overrides
+            ├── .eslintrc.js          ← AddonRegistry aliases (no jsconfig.json)
+            ├── .nvmrc, .release-it.json
             └── .bundlewatch.config.json
 ```
 
-Only files that differ from the Plone upstream are stored here. Everything else (workspace `package.json`, `.eslintrc.js`, `cypress.config.js`, `vitest.config.mjs`, storybook, pnpm workspace, TypeScript config, etc.) is inherited automatically via the `extends` overlay mechanism.
+Only files that differ from the Plone upstream are stored here. Everything else (`pnpm-workspace.yaml`, `mrs.developer.json`, `.npmrc`, `.pnpmfile.cjs`, `vitest.config.mjs`, TypeScript config, locales, etc.) is inherited automatically via the `extends` overlay mechanism.

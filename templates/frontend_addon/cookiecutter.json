@@ -27,7 +27,7 @@
   "__prompts__": {
     "title": "Add-on Title",
     "description": "A short description of your addon",
-    "frontend_addon_name": "Add-on name (the volto- prefix and @eeacms scope are added automatically)",
+    "frontend_addon_name": "Add-on name (used exactly as provided, e.g. volto-my-addon; only the @eeacms/ npm scope is added automatically)",
     "github_organization": "GitHub Organization",
     "npm_package_name": "Package name on NPM",
     "use_prerelease_versions": "Should we use prerelease versions?",
