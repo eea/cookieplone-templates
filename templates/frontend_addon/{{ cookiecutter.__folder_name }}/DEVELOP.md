@@ -125,3 +125,23 @@ Or run it:
 ## Internationalization (i18n) and localization (l10n)
 
 See [Internationalization](https://6.docs.plone.org/volto/development/i18n.html) and [Translate Volto](https://6.docs.plone.org/i18n-l10n/contributing-translations.html#translate-volto).
+
+## Webpack customization (`razzle.extend.js`)
+
+If this add-on needs to customize the webpack/razzle build (resolve aliases,
+loaders, plugins), put the `razzle.extend.js` file **inside this add-on
+package**, next to its `package.json`:
+
+```
+packages/{{ cookiecutter.frontend_addon_name }}/razzle.extend.js   ← correct
+razzle.extend.js (repo/scaffold root)                              ← NOT loaded
+```
+
+Volto core loads add-on webpack extensions via
+`AddonRegistry.getAddonExtenders()`, which only looks for `razzle.extend.js`
+in the directory of each registered add-on's `package.json`. A file placed at
+the repository (scaffold) root is silently ignored. The module must export
+`plugins(defaultPlugins)` and `modify(config, { target, dev }, webpack)`.
+
+The same rule applies to `eslint.extend.js`.
+

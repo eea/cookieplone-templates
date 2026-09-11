@@ -61,25 +61,29 @@ def main():
 
     data = json.loads(pkg_path.read_text())
 
-    # Add lint-staged configuration
+    # Add lint-staged configuration.
+    # Glob patterns MUST be prefixed with `packages/<addon_name>/`: the hook runs
+    # lint-staged from the repo (scaffold) root, so `src/**` (the pre-Volto-19
+    # flat layout) would never match staged files under the nested package and
+    # every commit would silently skip the lint tasks.
     data["lint-staged"] = {
-        "src/**/*.{js,jsx,ts,tsx,json}": [
+        f"packages/{addon_name}/src/**/*.{{js,jsx,ts,tsx,json}}": [
             "make lint-fix",
             "make prettier-fix",
         ],
-        "src/**/*.{jsx}": [
+        f"packages/{addon_name}/src/**/*.jsx": [
             "make i18n",
         ],
-        "theme/**/*.{css,less}": [
+        f"packages/{addon_name}/theme/**/*.{{css,less}}": [
             "make stylelint-fix",
         ],
-        "src/**/*.{css,less}": [
+        f"packages/{addon_name}/src/**/*.{{css,less}}": [
             "make stylelint-fix",
         ],
-        "theme/**/*.overrides": [
+        f"packages/{addon_name}/theme/**/*.overrides": [
             "make stylelint-fix",
         ],
-        "src/**/*.overrides": [
+        f"packages/{addon_name}/src/**/*.overrides": [
             "make stylelint-fix",
         ],
     }
