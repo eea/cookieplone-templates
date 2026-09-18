@@ -16,14 +16,14 @@ Upstream templates (backend add-on, monorepo add-on, classic project, documentat
 ```bash
 # Interactive — Title, Add-on name (derived from Title), Description,
 # NPM package name, prerelease versions, Volto version
-COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates uvx cookieplone@2.0.0b3
+COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates uvx cookieplone@2.0.0
 
 # Generate a specific template
-COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates uvx cookieplone@2.0.0b3 frontend_addon
-COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates uvx cookieplone@2.0.0b3 frontend_project
+COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates uvx cookieplone@2.0.0 frontend_addon
+COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates uvx cookieplone@2.0.0 frontend_project
 
 # No prompts (uses all EEA defaults)
-COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates uvx cookieplone@2.0.0b3 frontend_addon --no-input
+COOKIEPLONE_REPOSITORY=gh:eea/cookieplone-templates uvx cookieplone@2.0.0 frontend_addon --no-input
 ```
 
 ## What's different from the Plone upstream?
@@ -94,10 +94,10 @@ git clone https://github.com/eea/cookieplone-templates.git
 cd cookieplone-templates
 
 # Generate a test add-on from local templates
-COOKIEPLONE_REPOSITORY=$(pwd) uvx cookieplone@2.0.0b3 frontend_addon --no-input -o /tmp/test
+COOKIEPLONE_REPOSITORY=$(pwd) uvx cookieplone@2.0.0 frontend_addon --no-input -o /tmp/test
 
 # Interactive (only 2 prompts)
-COOKIEPLONE_REPOSITORY=$(pwd) uvx cookieplone@2.0.0b3
+COOKIEPLONE_REPOSITORY=$(pwd) uvx cookieplone@2.0.0
 
 # Clear the cookieplone cache if templates don't update
 rm -rf ~/.cookiecutters/eea/cookieplone-templates
