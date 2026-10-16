@@ -53,7 +53,8 @@ All other options (author, email, GitHub org, CI initialization, documentation) 
 |------|--------|---------|
 | `Jenkinsfile` | EEA | Dual Volto 19 (current) + Volto 18-yarn (previous) CI pipeline using EEA Makefile targets |
 | `Dockerfile` | EEA | CI test image with Chromium — handles both Volto 18 (`/setupAddon`) and Volto 19 (copy to `packages/` + `pnpm install`) |
-| `Makefile` | EEA | Slim EEA Makefile — local pnpm dev, backend docker-compose, EEA target names (`ci-fix`, `test-ci`, `start-ci`, `check-ci`, `cypress-ci`), ports 3000/8080 |
+| `Makefile` | EEA | Slim EEA Makefile — local pnpm dev, backend docker-compose, EEA target names (`ci-fix`, `test-ci`, `start-ci`, `check-ci`, `cypress-ci`), ports 3000/8080. `start-ci` instruments the build for Cypress coverage |
+| `.coverage.babel.config.js` | EEA | Istanbul instrumentation (add-on sources only) used by `start-ci`, so Cypress collects end-to-end coverage for SonarQube |
 | `docker-compose.yml` | EEA | Backend-only (`eeacms/plone-backend` on port 8080 with `eea.kitkat:testing` profiles) |
 | `cypress/support/commands.js` | EEA | EEA Cypress commands: `autologin`, `createContent`, `removeContent`, `setWorkflow`, Slate editor helpers |
 | `cypress/support/e2e.js` | EEA | EEA Cypress support: `@cypress/code-coverage`, `slateBeforeEach`/`slateAfterEach` |

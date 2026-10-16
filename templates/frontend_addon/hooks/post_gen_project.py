@@ -11,6 +11,11 @@ package), so husky install must run from there.
 Also removes the unused test-runner config so a Volto 19 addon does not
 ship a dead `jest-addon.config.js` (and a Volto 18 addon does not ship a
 dead `vitest.config.mjs`), mirroring the upstream post-generation cleanup.
+
+Finally wires the CI coverage reporting: `babel-plugin-istanbul` in the root
+devDependencies, the Istanbul coverage provider for Vitest (same line model as
+the Cypress instrumentation) and `babel-plugin-istanbul`'s counterpart in the
+add-on package so SonarQube can merge the unit and end-to-end lcov reports.
 """
 
 import json
@@ -43,6 +48,37 @@ def remove_conditional_files(context, output_dir):
         pnpmfile_path = output_dir / ".pnpmfile.cjs"
         if pnpmfile_path.is_file():
             pnpmfile_path.unlink()
+
+
+def patch_vitest_coverage(output_dir, addon_name):
+    """Use the Istanbul coverage provider in the generated vitest config.
+
+    The Cypress end-to-end coverage is collected with babel-plugin-istanbul,
+    so the unit tests must use the same line model, otherwise SonarQube cannot
+    merge the two lcov reports meaningfully. Handles both the minimal config
+    that spreads ``voltoVitestConfig`` and configs with an explicit provider.
+    """
+    if not addon_name:
+        return
+    vitest_path = output_dir / "packages" / addon_name / "vitest.config.mjs"
+    if not vitest_path.is_file():
+        return
+    text = vitest_path.read_text()
+    if "provider: 'v8'" in text:
+        patched = text.replace("provider: 'v8'", "provider: 'istanbul'")
+    elif "...voltoVitestConfig," in text:
+        patched = text.replace(
+            "  ...voltoVitestConfig,\n",
+            "  ...voltoVitestConfig,\n"
+            "  coverage: {\n"
+            "    ...voltoVitestConfig.coverage,\n"
+            "    provider: 'istanbul',\n"
+            "  },\n",
+        )
+    else:
+        patched = text
+    if patched != text:
+        vitest_path.write_text(patched)
 
 
 def main():
@@ -113,9 +149,13 @@ def main():
     dev_deps["husky"] = "^8.0.3"
     dev_deps["lint-staged"] = "^14.0.1"
     dev_deps["@cypress/code-coverage"] = "^3.10.0"
-    dev_deps["@vitest/coverage-v8"] = data.get("devDependencies", {}).get("vitest", "^3.1.2")
+    dev_deps["@vitest/coverage-istanbul"] = data.get("devDependencies", {}).get(
+        "vitest", "^3.1.2"
+    )
 
     pkg_path.write_text(json.dumps(data, indent=2) + "\n")
+
+    patch_vitest_coverage(output_dir, addon_name)
 
     # The .husky/pre-commit hook at the repo root runs `pnpm lint-staged`,
     # which resolves from the root -dev shell. lint-staged lives in the
@@ -125,6 +165,7 @@ def main():
     root_data = json.loads(root_pkg_path.read_text())
     root_dev = root_data.setdefault("devDependencies", {})
     root_dev["lint-staged"] = "^14.0.1"
+    root_dev["babel-plugin-istanbul"] = "^6.1.1"
     root_pkg_path.write_text(json.dumps(root_data, indent=2) + "\n")
 
 
